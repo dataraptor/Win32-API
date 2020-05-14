@@ -1,0 +1,9 @@
+
+
+	POINT loc;
+        GetCursorPos(&loc);
+        printf("%d %d", loc.x, loc.y);
+
+
+
+	SetCursorPos(50, 50);

@@ -1,0 +1,10 @@
+
+1. INstall MINGW and include win32 Development package
+2. Target include file and library file to Code blocks
+   in Project->Build Options 
+        Search directories -> Compiles -> Target Include File
+        Search directories -> Linker -> Target lib file
+
+
+
+

@@ -1,0 +1,14 @@
+#include <windows.h>
+#include <winuser.h>
+
+
+HWND hwnd = GetForegroundWindow();
+
+char title[length+1];
+GetWindowText(hwnd, title, length+1);
+printf("%d\t%s\n", hwnd, title);
+
+
+
+
+SetForegroundWindow(hwnd);

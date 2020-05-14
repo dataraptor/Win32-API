@@ -1,0 +1,23 @@
+#include <windows.h>
+#include <stdio.h>
+
+int main(void)
+{
+    HMODULE winmmDLL = LoadLibraryA("winmm.dll");
+
+    if (!winmmDLL) {
+        printf("LoadLibrary failed.\n");
+        return 1;
+    }
+
+    typedef DWORD (WINAPI *timeGetTime_fn)(void);
+    timeGetTime_fn pfnTimeGetTime = (timeGetTime_fn)GetProcAddress(winmmDLL, "timeGetTime");
+
+    if (!pfnTimeGetTime) {
+        printf("GetProcAddress failed.\n");
+        return 2;
+    }
+
+    printf("%d\n", (*pfnTimeGetTime)());
+    return 0;
+}

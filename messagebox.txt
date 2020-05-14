@@ -1,0 +1,9 @@
+#include <stdio.h>
+#include <windows.h>
+
+int main() {
+    
+    MessageBox(NULL, "Simple Message", "Hello", NULL);
+    
+    return 0;
+}

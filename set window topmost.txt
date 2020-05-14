@@ -1,0 +1,20 @@
+#include <stdbool.h>
+#include <windows.h>
+#include <winuser.h>
+
+
+int main()
+{
+    HWND hwnd = GetForegroundWindow();
+    
+    int length = GetWindowTextLength(hwnd);
+    char title[length+1];
+    GetWindowText(hwnd, title, length+1);
+    printf("%d\t%s\n", hwnd, title);
+    
+    if(IsWindowVisible(hwnd)==true)
+        SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW|SWP_NOSIZE|SWP_NOMOVE);
+    
+    
+    return 0;
+}

@@ -1,0 +1,25 @@
+    // size of screen in pixels including size of taskbar
+    int width  = GetSystemMetrics(SM_CXSCREEN);
+    int height = GetSystemMetrics(SM_CYSCREEN);
+    
+    // size of screen in pixels excluding size of taskbar
+    int width  = GetSystemMetrics(SM_CXFULLSCREEN);
+    int height = GetSystemMetrics(SM_CYFULLSCREEN);
+
+
+
+
+
+#include <stdio.h>
+#include <windows.h>
+#include <winuser.h>
+
+int main() {
+    
+    RECT rect;
+    HWND hdesktop = GetDesktopWindow();
+    GetWindowRect(hdesktop, &rect);
+    
+    printf("%d  %d", rect.right, rect.bottom);
+    return 0;
+}

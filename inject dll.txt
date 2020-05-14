@@ -1,0 +1,137 @@
+
+////////////////////////////////////////////////////////////////////
+VVI: The DLL Path must be absolute.
+////////////////////////////////////////////////////////////////////
+
+
+
+//Dll file
+#include "Windows.h"
+BOOL APIENTRY DllMain( HMODULE hModule,
+                       DWORD  ul_reason_for_call,
+                       LPVOID lpReserved
+					 )
+{
+	if(ul_reason_for_call == DLL_THREAD_ATTACH) {
+		MessageBox(0, L"Thread Attatched", L"Hello", 0);
+	}
+	else if(ul_reason_for_call == DLL_PROCESS_ATTACH) {
+		MessageBox(0, L"Process Attatched", L"Hello", 0);
+	}
+	
+	return TRUE;
+}
+
+
+
+
+
+
+
+//Injector
+
+#include <windows.h>
+#include <TlHelp32.h>
+#include <cstdio>
+
+
+HANDLE findProcess(WCHAR* processName) {
+	HANDLE hProcessSnap;
+	HANDLE hProcess;
+	PROCESSENTRY32 pe32;
+	DWORD dwPriorityClass;
+
+	// Take a snapshot of all processes in the system.
+	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE) {
+		printf("[---] Could not create snapshot.\n");
+	}
+
+	// Set the size of the structure before using it.
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+
+	// Retrieve information about the first process,
+	// and exit if unsuccessful
+	if (!Process32First(hProcessSnap, &pe32)) {
+		printf("Process32First");
+		CloseHandle(hProcessSnap);
+		return FALSE;
+	}
+
+	// Now walk the snapshot of processes, and
+	// display information about each process in turn
+	do {
+
+		if (!wcscmp(pe32.szExeFile, processName)) {
+			wprintf(L"[+] The process %s was found in memory.\n", pe32.szExeFile);
+
+			hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+			if (hProcess != NULL) {
+				return hProcess;
+			} else {
+				printf("[---] Failed to open process %s.\n", pe32.szExeFile);
+				return NULL;
+
+			}
+		}
+
+	} while (Process32Next(hProcessSnap, &pe32));
+
+	printf("[---] %s has not been loaded into memory, aborting.\n", processName);
+	return NULL;
+}
+
+
+
+
+bool InjectDynamicLibrary(HANDLE htargetProcess, char *dllpath) {
+	//open new handle to target process
+
+	if(htargetProcess) {
+		LPVOID dllPathAddtrssInMem = VirtualAllocEx(htargetProcess, NULL, strlen(dllpath)+1, 
+			MEM_COMMIT|MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		BOOL succeededWriting = 
+			WriteProcessMemory(htargetProcess, dllPathAddtrssInMem, dllpath, strlen(dllpath)+1, NULL);
+
+		/*Debug*/
+		char *check = new char[strlen(dllpath)]; //need to disallocate
+		ReadProcessMemory(htargetProcess, dllPathAddtrssInMem, check, strlen(dllpath)+1, NULL);
+
+		LPVOID LoadLibAddr = (LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+		HANDLE RemoteThread = CreateRemoteThread(htargetProcess, 0, 0, 
+			(LPTHREAD_START_ROUTINE)LoadLibAddr, dllPathAddtrssInMem, 0, 0);
+
+		if(!RemoteThread) {
+			printf("Cannot Create Thread in Remote Process.");
+			return false;
+		}
+
+		//wait for operation to complete
+		WaitForSingleObject(RemoteThread, INFINITE);
+
+		//the path to the dll is no longer needed in the target process
+		VirtualFreeEx(htargetProcess, dllPathAddtrssInMem, strlen(dllpath)+1, MEM_RELEASE);
+		CloseHandle(RemoteThread);
+		CloseHandle(htargetProcess);
+
+		printf("Success");
+		return true;
+	}
+	return false;
+}
+
+int main(int argc, char *argv[]) {
+	int i = 6720;
+
+	//HANDLE htargetProcess = OpenProcess(PROCESS_ALL_ACCESS, 0, processid);
+	HANDLE hndl = findProcess(L"vlc.exe");
+
+	bool res = InjectDynamicLibrary(hndl, "C:\\Users\\pavel\\Desktop\\Cloud\\DLL Injection\\Projects\\Injector\\Debug\\DLL.dll");
+	
+	
+	if(res == true) getchar();
+	else {
+		printf("Failed");
+		getchar();
+	}
+}

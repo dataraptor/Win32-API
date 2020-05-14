@@ -1,0 +1,10 @@
+
+
+Change volume for current program
+
+  DWORD dwVolume;
+
+  if (waveOutGetVolume(NULL, &dwVolume) == MMSYSERR_NOERROR)
+    waveOutSetVolume(NULL, 0); // mute volume
+
+  waveOutSetVolume(NULL, dwVolume);

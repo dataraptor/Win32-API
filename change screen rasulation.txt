@@ -1,0 +1,17 @@
+#include <stdio.h>
+#include <windows.h>
+#include <winuser.h>
+
+int main() {
+    
+    DEVMODE devmode;
+    devmode.dmPelsWidth = 1366;
+    devmode.dmPelsHeight = 768;
+    devmode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+    devmode.dmSize = sizeof(DEVMODE);
+
+    int result = ChangeDisplaySettings(&devmode, 0);
+    
+    printf("%d", result);
+    return 0;
+}

@@ -1,0 +1,38 @@
+#include <stdio.h>
+#include <windows.h>
+
+int main() {
+    SC_HANDLE managerHandle;
+    SC_HANDLE serviceHandle;
+
+    SERVICE_STATUS   controlParms;
+    DWORD retStatus;
+
+    managerHandle = OpenSCManager(NULL, NULL, GENERIC_READ);
+    if (NULL != managerHandle) {
+        serviceHandle = OpenService(managerHandle, L"WSearch", SERVICE_ALL_ACCESS);
+        
+        if (NULL != serviceHandle) {
+            printf("connected to Service\n");;
+            retStatus = ControlService(serviceHandle, 141, &controlParms);
+
+            if (retStatus) {
+                //Get the return code from the service
+                printf("For command 141, return code from service was %d", controlParms.dwWin32ExitCode);
+            }
+            else
+                printf("Sending command 141 failed\n");
+            CloseServiceHandle(serviceHandle);
+        }
+        else {
+            printf("could not connect to Service\n");
+        }
+        CloseServiceHandle(managerHandle);
+    }
+    else {
+        printf("could not open service manager\n");
+    }
+    
+    getchar();
+    return 0;
+}

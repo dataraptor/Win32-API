@@ -1,0 +1,53 @@
+#include <windows.h>
+#include <stdio.h>
+
+#define SIZE 6
+
+typedef int (WINAPI *pMessageBoxW)(HWND, LPCWSTR, LPCWSTR, UINT);
+int WINAPI MyMessageBoxW(HWND, LPCWSTR, LPCWSTR, UINT);
+
+void BeginRedirect(LPVOID);
+
+
+pMessageBoxW pOrigMBAddress = NULL;
+BYTE oldBytes[SIZE] = {0};
+BYTE JMP[SIZE] = {0};
+DWORD oldProtect, myProtect = PAGE_EXECUTE_READWRITE;
+
+void BeginRedirect(LPVOID newFunction)
+{
+    BYTE tempJMP[SIZE] = {0xE9, 0x90, 0x90, 0x90, 0x90, 0xC3};
+    memcpy(JMP, tempJMP, SIZE);
+    DWORD JMPSize = ((DWORD)newFunction - (DWORD)pOrigMBAddress - 5);
+    VirtualProtect((LPVOID)pOrigMBAddress, SIZE, 
+                    PAGE_EXECUTE_READWRITE, &oldProtect);
+    memcpy(oldBytes, pOrigMBAddress, SIZE);
+    memcpy(&JMP[1], &JMPSize, 4);
+    memcpy(pOrigMBAddress, JMP, SIZE);
+    VirtualProtect((LPVOID)pOrigMBAddress, SIZE, oldProtect, NULL);
+}
+
+int  WINAPI MyMessageBoxW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uiType)
+{
+    VirtualProtect((LPVOID)pOrigMBAddress, SIZE, myProtect, NULL);
+    memcpy(pOrigMBAddress, oldBytes, SIZE);
+    int retValue = MessageBoxW(hWnd, L"Redirected", lpCaption, uiType);
+    memcpy(pOrigMBAddress, JMP, SIZE);
+    VirtualProtect((LPVOID)pOrigMBAddress, SIZE, oldProtect, NULL);
+    return retValue;
+}
+
+int main() {
+
+
+	pOrigMBAddress = (pMessageBoxW) GetProcAddress(GetModuleHandle(L"user32.dll"), "MessageBoxW");
+    
+	if(pOrigMBAddress != NULL) BeginRedirect(MyMessageBoxW);    
+
+
+	MessageBoxW(NULL, L"HI", L"HLW", 0);
+
+
+	getchar();
+	return 0;
+}
